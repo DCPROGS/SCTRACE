@@ -6,9 +6,16 @@ Created on Mon Jan  4 11:59:45 2016
 """
 
 from neo.io import AxonIO
+# https://github.com/NeuralEnsemble/python-neo
+# Just clone this to pythonpath
 from quantities import kHz, ms, pA, nA, s, uV
+# https://pypi.python.org/pypi/quantities
+# Add support for units
+# Can be installed via pip
 import numpy as np
 from sklearn import mixture
+# http://scikit-learn.org/stable/
+# Machine learning package
 
 
 class RawRecord():
