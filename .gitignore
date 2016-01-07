@@ -55,3 +55,9 @@ docs/_build/
 
 # PyBuilder
 target/
+
+# Netbeans / Spyder project internals
+nbproject
+nbproject.*
+nbproject/*
+.spyderproject
