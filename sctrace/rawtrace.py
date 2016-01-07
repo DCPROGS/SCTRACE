@@ -59,32 +59,32 @@ class RawRecord():
         read_data = original_file.read_block(lazy=False, cascade=True)
         self.trace = read_data.segments[0].analogsignals[0]
 
-    def time2index(self, start, stop):
+    def time2index(self, time):
         '''
         Convert the time to index.
         '''
-        start, stop = self.check_time([start, stop])
-        start = start - self.trace.t_start.rescale(ms)
-        start *= self.trace.sampling_rate
-        start = int(np.floor(start.simplified))
-        stop = stop - self.trace.t_start.rescale(ms)
-        stop *= self.trace.sampling_rate
-        stop = int(np.floor(stop.simplified))
-        return start, stop
+        time = self.check_time(time)
+        time = time - self.trace.t_start.rescale(ms)
+        time *= self.trace.sampling_rate
+        return int(np.floor(time.simplified))
 
-    def check_time(self, time_list):
+    def index2time(self, index):
+        '''
+        Convert index to time.
+        '''
+        return self.trace.t_start + index * self.trace.sampling_rate
+
+
+
+    def check_time(self, time):
         '''
         Convert the time to ms.
         '''
-        new_time_list = []
-        for time in time_list:
-            try:
-                time.rescale(ms)
-                new_time_list.append(time)
-            except AttributeError:
-                time = time * ms
-                new_time_list.append(time)
-        return new_time_list
+        try:
+            time = time.rescale(ms)
+        except AttributeError:
+            time = time * ms
+        return time
 
     def slice(self, start, stop):
         '''
@@ -92,7 +92,7 @@ class RawRecord():
         is usually too large.
         start and stop is in ms.
         '''
-        idx_start, idx_stop = self.time2index(start, stop)
+        idx_start, idx_stop = self.time2index(start), self.time2index(stop)
 
         return self.trace[idx_start: idx_stop]
 
@@ -140,7 +140,7 @@ class RawRecord():
         '''
         Calculate the Popen in the given time.
         '''
-        start, stop = self.check_time([start, stop])
+        start, stop = self.check_time(start), self.check_time(stop)
         self.temp = self.slice(start, stop)
 
         if baseline is None:
@@ -151,17 +151,13 @@ class RawRecord():
             idx_start, idx_stop = self.detect_start_stop(start, stop,
                                                          baseline, conductance)
         else:
-            idx_start, idx_stop = self.time2index(start, stop)
+            idx_start, idx_stop = self.time2index(start), self.time2index(stop)
 
 
 
-        integrated_current = (np.sum((self.trace[idx_start: idx_stop] - baseline)) /
-        self.trace.sampling_rate)
-        whole =  (open_level or (conductance - baseline)) * (stop - start)
+        integrated_current = np.sum((self.trace[idx_start: idx_stop] - baseline))
+        whole =  (open_level or (conductance - baseline)) * (idx_stop -idx_start)
         Popen = integrated_current/whole
         self.amplitude = None
         return Popen.simplified
-
-
-
-
+        
