@@ -18,6 +18,8 @@ from sklearn import mixture
 # Machine learning package
 
 
+
+
 class RawRecord():
     def __init__(self,filename=None, trace = None):
         '''
@@ -38,6 +40,8 @@ class RawRecord():
         original_file = AxonIO(filename=self.filename)
         read_data = original_file.read_block(lazy=False, cascade=True)
         self.trace = read_data.segments[0].analogsignals[0]
+        print(self.trace)
+        
 
     def time2index(self, start, stop):
         '''
@@ -145,7 +149,3 @@ class RawRecord():
 
 
 
-
-
-trace = RawRecord(filename='/Users/zhiyiwu/Google Drive/2015_06_04_0020.abf')
-print(trace.Popen(0,500))
