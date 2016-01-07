@@ -22,10 +22,6 @@ class TestSCTrace(unittest.TestCase):
         from sctrace.rawtrace import RawRecord
         filename="./sctrace/samples/cluster.abf"
         trace = RawRecord(filename)
-        print(trace.Popen(0,500))
     
-
-        
-
 if __name__ == "__main__":
     pass
