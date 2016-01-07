@@ -5,10 +5,10 @@ Created on Mon Jan  4 11:59:45 2016
 @author: zhiyiwu
 """
 
-from neo.io import AxonIO
+#from neo.io import AxonIO
 # https://github.com/NeuralEnsemble/python-neo
 # Just clone this to pythonpath
-from quantities import kHz, ms, pA, nA, s, uV
+#from quantities import kHz, ms, pA, nA, s, uV
 # https://pypi.python.org/pypi/quantities
 # Add support for units
 # Can be installed via pip
@@ -17,8 +17,26 @@ from sklearn import mixture
 # http://scikit-learn.org/stable/
 # Machine learning package
 
+from dcpyps import dcio
 
+class Segment(object):
+    def __init__(self):
+        pass
+    
+class Trace(Segment):
+    def __init__(self, filename):
+        self.filename = filename
+        
+        #TODO: currently opens Axon file directly. Make option to open SSD file.
+        h = dcio.abf_read_header(filename, 0)
+        calfac = (1 / ((h['IADCResolution'] / h['fADCRange'])
+                * h['fTelegraphAdditGain'][h['nADCSamplingSeq'][0]] *
+                h['fInstrumentScaleFactor'][h['nADCSamplingSeq'][0]]))
+        self.trace = dcio.abf_read_data(filename, h) * calfac
+        self.dt = h['fADCSampleInterval'] / 1.0e6
+        
 
+        
 
 class RawRecord():
     def __init__(self,filename=None, trace = None):
