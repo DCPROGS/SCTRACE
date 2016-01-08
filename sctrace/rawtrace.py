@@ -5,13 +5,7 @@ Created on Mon Jan  4 11:59:45 2016
 @author: zhiyiwu
 """
 
-#from neo.io import AxonIO
-# https://github.com/NeuralEnsemble/python-neo
-# Just clone this to pythonpath
-#from quantities import kHz, ms, pA, nA, s, uV
-# https://pypi.python.org/pypi/quantities
-# Add support for units
-# Can be installed via pip
+
 import numpy as np
 from sklearn import mixture
 # http://scikit-learn.org/stable/
@@ -20,44 +14,14 @@ from sklearn import mixture
 from dcpyps import dcio
 
 class Segment(object):
-    def __init__(self):
-        pass
-    
-class Trace(Segment):
-    def __init__(self, filename):
-        self.filename = filename
-        
-        #TODO: currently opens Axon file directly. Make option to open SSD file.
-        h = dcio.abf_read_header(filename, 0)
-        calfac = (1 / ((h['IADCResolution'] / h['fADCRange'])
-                * h['fTelegraphAdditGain'][h['nADCSamplingSeq'][0]] *
-                h['fInstrumentScaleFactor'][h['nADCSamplingSeq'][0]]))
-        self.trace = dcio.abf_read_data(filename, h) * calfac
-        self.dt = h['fADCSampleInterval'] / 1.0e6
-        
-
-        
-
-class RawRecord():
-    def __init__(self,filename=None, trace = None):
+    def __init__(self,trace = None):
         '''
-        read the original record.
         '''
-        self.filename = filename
         self.amplitude = None
         self.temp = None
-        if trace is None:
-            self.read()
-        else:
-            self.trace = trace
 
-    def read(self):
-        '''
-        Convert the raw data to a numpy array.
-        '''
-        original_file = AxonIO(filename=self.filename)
-        read_data = original_file.read_block(lazy=False, cascade=True)
-        self.trace = read_data.segments[0].analogsignals[0]
+        self.trace = trace
+
 
     def time2index(self, time):
         '''
@@ -161,3 +125,36 @@ class RawRecord():
         self.amplitude = None
         return Popen.simplified
         
+    
+class Record(Segment):
+    def __init__(self, filename):
+        self.filename = filename
+        #TODO: currently opens Axon file directly. Make option to open SSD file.
+        self.trace, self.dt = self.read_abf(self.filename)
+        
+    def read_abf(self, filename):    
+        h = dcio.abf_read_header(filename, 0)
+        calfac = (1 / ((h['IADCResolution'] / h['fADCRange'])
+                * h['fTelegraphAdditGain'][h['nADCSamplingSeq'][0]] *
+                h['fInstrumentScaleFactor'][h['nADCSamplingSeq'][0]]))
+        trace = dcio.abf_read_data(filename, h) * calfac # convert to pA
+        dt = h['fADCSampleInterval'] / 1.0e6 # convert to seconds
+        return trace, dt
+    
+    def read(self):
+        '''
+        Convert the raw data to a numpy array by reading Axon files using neo. 
+        '''
+        #from neo.io import AxonIO
+        # https://github.com/NeuralEnsemble/python-neo
+        # Just clone this to pythonpath
+        #from quantities import kHz, ms, pA, nA, s, uV
+        # https://pypi.python.org/pypi/quantities
+        # Add support for units
+        # Can be installed via pip
+        original_file = AxonIO(filename=self.filename)
+        read_data = original_file.read_block(lazy=False, cascade=True)
+        self.trace = read_data.segments[0].analogsignals[0]
+
+        
+
