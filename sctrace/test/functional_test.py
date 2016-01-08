@@ -19,9 +19,12 @@ class TestSCTrace(unittest.TestCase):
         f.close()
         
     def test_rawtrace(self):
-        from sctrace.rawtrace import RawRecord
+        from sctrace.rawtrace import Record
         filename="./sctrace/samples/cluster.abf"
-        trace = RawRecord(filename)
+        cluster = Record(filename)
+        trace, dt = cluster.trace, cluster.dt
+        self.assertTrue(dt == 0.0001)
+        self.assertTrue(len(trace) == 11695)
     
 if __name__ == "__main__":
     pass

@@ -5,18 +5,18 @@ __date__ = "$07-Jan-2016 15:26:09$"
 
 from pylab import *
 
-from sctrace.rawtrace import RawRecord
+from sctrace.rawtrace import Record
 
 if __name__ == "__main__":
     
     filename="./sctrace/samples/cluster.abf"
-    cluster = RawRecord(filename)
-    print('sampling rate =', 1e6 / cluster.trace.sampling_rate, ' us')
-    print('number of points =', len(cluster.trace))
-    print('end_time =', (len(cluster.trace) / cluster.trace.sampling_rate))
-    
-    #t = arange(0.0, end_time, 1 / cluster.trace.sampling_rate)
-    plot(cluster.trace)
+    cluster = Record(filename)
+    end = len(cluster.trace) * cluster.dt
+
+    t = arange(0.0, end, cluster.dt)
+    print ('trace: ', cluster.trace)
+    print ('time: ', t)
+    plot(t, cluster.trace)
     xlabel('time (ms)')
     ylabel('Current (pA)')
     title('Cluster example')
@@ -24,6 +24,8 @@ if __name__ == "__main__":
     show()
     
     
-    
-    
-    print(cluster.Popen(0,500))
+    new_segement = cluster.slice(0, -1)
+    new_cluster = new_segement.find_cluster()
+    popen = new_cluster.cal_Popen()
+    print(new_cluster)
+    print(popen)
