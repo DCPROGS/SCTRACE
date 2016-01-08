@@ -127,7 +127,7 @@ class TraceDock(Dock):
         self.pltSegment.plot(t, self.seg1.trace, pen='g')
         if self.clusterOpenLevel:
             self.clusterOpenLn = pg.InfiniteLine(angle=0, movable=True, pen='r')
-            self.clusterOpenLn.setValue(self.seg1coor[0])
+            self.clusterOpenLn.setValue(self.clusterOpenLevel[0])
             self.clusterOpenLn.sigPositionChangeFinished.connect(self.clusterOpenChanged)
             self.pltSegment.addItem(self.clusterOpenLn)
         

@@ -29,3 +29,4 @@ if __name__ == "__main__":
     popen = new_cluster.cal_Popen()
     print(new_cluster)
     print(popen)
+    print(new_cluster.open_level)
