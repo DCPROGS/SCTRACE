@@ -14,9 +14,12 @@ from sklearn import mixture
 from dcpyps import dcio
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 class Cluster():
     def __init__(self, trace = None, dt = None, t_start = 0, open_level = None):
 =======
+=======
+>>>>>>> DCPROGS/master
 class Segment(object):
     def __init__(self,trace = None):
         '''
@@ -182,6 +185,9 @@ class Record(Segment):
         '''
         Convert the raw data to a numpy array by reading Axon files using neo. 
         '''
+<<<<<<< HEAD
+>>>>>>> DCPROGS/master
+=======
 >>>>>>> DCPROGS/master
         #from neo.io import AxonIO
         # https://github.com/NeuralEnsemble/python-neo
@@ -194,6 +200,12 @@ class Record(Segment):
         read_data = original_file.read_block(lazy=False, cascade=True)
         self.trace = read_data.segments[0].analogsignals[0]
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+
+        
+
+>>>>>>> DCPROGS/master
 =======
 
         

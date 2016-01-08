@@ -34,4 +34,7 @@ if __name__ == "__main__":
     
     
 #    print(cluster.Popen(0,500))
+<<<<<<< HEAD
+>>>>>>> DCPROGS/master
+=======
 >>>>>>> DCPROGS/master
