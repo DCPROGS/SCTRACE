@@ -13,8 +13,31 @@ from sklearn import mixture
 
 from dcpyps import dcio
 
+<<<<<<< HEAD
 class Cluster():
     def __init__(self, trace = None, dt = None, t_start = 0, open_level = None):
+=======
+class Segment(object):
+    def __init__(self,trace = None):
+        '''
+        '''
+        self.amplitude = None
+        self.temp = None
+
+        self.trace = trace
+
+
+    def time2index(self, time):
+        '''
+        Convert the time to index.
+        '''
+        time = self.check_time(time)
+        time = time - self.trace.t_start.rescale(ms)
+        time *= self.trace.sampling_rate
+        return int(np.floor(time.simplified))
+
+    def index2time(self, index):
+>>>>>>> DCPROGS/master
         '''
         '''
         self.trace = trace
@@ -116,6 +139,50 @@ class Record(Segment):
         '''
         Convert the raw data to a numpy array by reading Axon files using neo.
         '''
+<<<<<<< HEAD
+=======
+        start, stop = self.check_time(start), self.check_time(stop)
+        self.temp = self.slice(start, stop)
+
+        if baseline is None:
+            baseline = self.detect_baseline()
+        if conductance is None:
+            conductance = self.detect_conductance()
+        if whole_cluster is False:
+            idx_start, idx_stop = self.detect_start_stop(start, stop,
+                                                         baseline, conductance)
+        else:
+            idx_start, idx_stop = self.time2index(start), self.time2index(stop)
+
+
+
+        integrated_current = np.sum((self.trace[idx_start: idx_stop] - baseline))
+        whole =  (open_level or (conductance - baseline)) * (idx_stop -idx_start)
+        Popen = integrated_current/whole
+        self.amplitude = None
+        return Popen.simplified
+        
+    
+class Record(Segment):
+    def __init__(self, filename):
+        self.filename = filename
+        #TODO: currently opens Axon file directly. Make option to open SSD file.
+        self.trace, self.dt = self.read_abf(self.filename)
+        
+    def read_abf(self, filename):    
+        h = dcio.abf_read_header(filename, 0)
+        calfac = (1 / ((h['IADCResolution'] / h['fADCRange'])
+                * h['fTelegraphAdditGain'][h['nADCSamplingSeq'][0]] *
+                h['fInstrumentScaleFactor'][h['nADCSamplingSeq'][0]]))
+        trace = dcio.abf_read_data(filename, h) * calfac # convert to pA
+        dt = h['fADCSampleInterval'] / 1.0e6 # convert to seconds
+        return trace, dt
+    
+    def read(self):
+        '''
+        Convert the raw data to a numpy array by reading Axon files using neo. 
+        '''
+>>>>>>> DCPROGS/master
         #from neo.io import AxonIO
         # https://github.com/NeuralEnsemble/python-neo
         # Just clone this to pythonpath
@@ -126,3 +193,9 @@ class Record(Segment):
         original_file = AxonIO(filename=self.filename)
         read_data = original_file.read_block(lazy=False, cascade=True)
         self.trace = read_data.segments[0].analogsignals[0]
+<<<<<<< HEAD
+=======
+
+        
+
+>>>>>>> DCPROGS/master
