@@ -24,6 +24,8 @@ if __name__ == "__main__":
     show()
     
     
-    
-    
-#    print(cluster.Popen(0,500))
+    new_segement = cluster.slice(0, -1)
+    new_cluster = new_segement.find_cluster()
+    popen = new_cluster.cal_Popen()
+    print(new_cluster)
+    print(popen)
