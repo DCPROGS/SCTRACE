@@ -10,7 +10,7 @@ from sctrace.rawtrace import Record
 if __name__ == "__main__":
     
     filename="./sctrace/samples/cluster.abf"
-    cluster = Record(filename)
+    cluster = Record(filename, filter_f = 3000)
     end = len(cluster.trace) * cluster.dt
 
     t = arange(0.0, end, cluster.dt)
@@ -24,7 +24,7 @@ if __name__ == "__main__":
     show()
     
     
-    new_segement = cluster.slice(0, -1)
+    new_segement = cluster.slice(0.1, 1.15, dtype = 'time')
     new_cluster = new_segement.find_cluster()
     popen = new_cluster.cal_Popen()
     print(new_cluster)

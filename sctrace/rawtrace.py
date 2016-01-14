@@ -38,7 +38,8 @@ class Cluster():
         return 'Start time: {start}, End time: {end}'.format(start = self.get_t_start(), end = self.get_t_end())
 
 class Segment(object):
-    def __init__(self, trace = None, dt = None, t_start = 0):
+    def __init__(self, trace = None, dt = None, t_start = 0, 
+                 filter_rising_t = None):
         '''
         '''
         self.trace = trace
@@ -47,6 +48,7 @@ class Segment(object):
 
         self.baseline = None
         self.open_level = None
+        self.filter_rising_t = filter_rising_t
 
     def find_cluster(self):
         '''
@@ -66,16 +68,47 @@ class Segment(object):
         t_start = adjusted_t_start, open_level = adjusted_open_level)
         return cluster
 
-    def amplitude_analysis(self):
+    def amplitude_analysis(self, method = 'filter'):
         '''
         Automatical snalysis the baseline and conductance.
         self.baseline and self.open_level are set in this function but can also
         be set by other function or manually.
         '''
-        g = mixture.GMM(n_components=2)
-        temp = np.expand_dims(self.trace, axis=1)
-        e=g.fit(temp)
-        self.baseline, self.open_level = min(e.means_), max(e.means_)
+        if method == 'GMM':
+            g = mixture.GMM(n_components=2)
+            temp = np.expand_dims(self.trace, axis=1)
+            e=g.fit(temp)
+            self.baseline, self.open_level = min(e.means_), max(e.means_)
+        elif method == 'filter':
+            # take the 99% quantile as the maximum amplitude
+            estimate_open_level = np.percentile(self.trace, 99)
+            # take the 1% quantile as the minimum amplitude
+            estimate_baseline = np.percentile(self.trace, 1)
+            
+            half_amplitude = (estimate_open_level + estimate_baseline) / 2
+            above_half_amplitude = np.where(self.trace > half_amplitude)[0]
+            length_filter = int(np.ceil(self.filter_rising_t/self.dt))
+            sample_index = 10e-3 / self.dt
+            baseline_before = max(0, above_half_amplitude[0]-length_filter - sample_index)
+            baseline_1 = np.mean(self.trace[baseline_before: above_half_amplitude[0]-length_filter])
+            baseline_after = min(len(self.trace), above_half_amplitude[-1]+length_filter+sample_index)
+            baseline_2 = np.mean(self.trace[above_half_amplitude[-1]+length_filter:baseline_after])
+            self.baseline = np.mean([baseline_1, baseline_2])
+
+            
+            split_index = np.split(above_half_amplitude, 
+                                   np.where(np.diff(above_half_amplitude) != 1)[0]+1)
+            
+            open_level_list = []
+            for amplitude in split_index:
+                if len(amplitude) > 2*length_filter:
+                    open_level_list.append(amplitude[length_filter:-length_filter])
+                    
+            total_open_level = self.trace[np.hstack(open_level_list)]
+            self.open_level = np.mean(total_open_level)             
+
+
+
 
     def detect_start_stop(self, trace, open_level):
         '''
@@ -87,10 +120,11 @@ class Segment(object):
 
 
 class Record(Segment):
-    def __init__(self, filename):
+    def __init__(self, filename, filter_f = None):
         self.filename = filename
         #TODO: currently opens Axon file directly. Make option to open SSD file.
         self.trace, self.dt = self.read_abf(self.filename)
+        self.filter_rising_t = 0.3321/filter_f
 
     def read_abf(self, filename):
         h = dcio.abf_read_header(filename, 0)
@@ -104,12 +138,12 @@ class Record(Segment):
     def slice(self, start, end, dtype = 'index'):
         if dtype == 'index':
             return Segment(trace = self.trace[start: end], dt = self.dt,
-            t_start = start * self.dt)
+            t_start = start * self.dt, filter_rising_t = self.filter_rising_t)
         elif dtype == 'time':
             idx_start = int(np.floor(start/self.dt))
             idx_end = int(np.floor(end/self.dt))
             return Segment(trace = self.trace[idx_start: idx_end], dt = self.dt,
-            t_start = start)
+            t_start = start, filter_rising_t = self.filter_rising_t)
 
 
     def read(self):
