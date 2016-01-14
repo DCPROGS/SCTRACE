@@ -133,7 +133,7 @@ class TraceDock(Dock):
         t = np.arange(self.seg1.t_start, end, self.seg1.dt)
         self.pltSegment.clear()
         self.pltSegment.plot(t, self.seg1.trace, pen='g')
-        if self.seg2coor == None:
+        if (self.seg2coor) == None or (self.seg1.t_start > self.seg2coor[0]) or (end < self.seg2coor[1]):
             self.seg2coor = (0.99*self.seg1.t_start + 0.01*end, end * 0.9)
         self.seg2StartLn = pg.InfiniteLine(angle=90, movable=True, pen='r')
         self.seg2StartLn.setValue(self.seg2coor[0])
@@ -156,7 +156,9 @@ class TraceDock(Dock):
         self.pltCluster.clear()
         self.pltCluster.plot(t, self.cluster.trace, pen='g')
         self.baseLn = pg.InfiniteLine(angle=90, movable=True, pen='r')
-        if self.basecoor == None:
+        if ((self.basecoor == None) or 
+                (self.basecoor < self.cluster.t_start) or 
+                (self.basecoor > end)):
             self.basecoor = 0.9*self.cluster.t_start + 0.1*end
         self.baseLn.setValue(self.basecoor)
         self.baseLn.sigPositionChangeFinished.connect(self.baseChanged)
