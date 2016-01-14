@@ -30,9 +30,15 @@ class TraceInspector(QMainWindow):
         self.path = None
         
 
-        dock = TraceDock(self)
-        area.addDock(dock, 'left')
-
+        dock1 = TraceDock(self)
+        area.addDock(dock1, 'left')
+        
+        dock2 = Dock('Output')
+        self.textBox = QTextBrowser()
+        layout = pg.LayoutWidget()
+        layout.addWidget(self.textBox, row=0, col=0)
+        dock2.addWidget(layout)
+        area.addDock(dock2, 'right')
 
     def update(self):
         pass
@@ -43,14 +49,12 @@ class TraceInspector(QMainWindow):
         self.seg2 = None
 
 
-
 class TraceDock(Dock):
     def __init__(self, parent):
         super(TraceDock, self).__init__(parent)
         self.parent = parent
         #self.title = "Patch Inspector"
         #self.resize=(1, 1)
-        
         
         self.seg1coor = None
         self.seg2coor = None
@@ -70,7 +74,7 @@ class TraceDock(Dock):
         w1.addWidget(self.loadBtn, row=0, col=0)
         w1.addWidget(self.clearBtn, row=0, col=1)
 
-        self.label1 = QLabel('Displaying patch: ')
+        self.label1 = QLabel('')
         w1.addWidget(self.label1, row=2, col=0, colspan=2)
         
         self.pltTrace = pg.PlotWidget()
@@ -101,15 +105,16 @@ class TraceDock(Dock):
         
     def calc_Popen(self):
         cluster = self.cluster.find_cluster()
-        self.popen = cluster.cal_Popen()
+        self.popen = cluster.Popen()
         self.clusterOpenLevel = cluster.open_level
+        text = ('{0:.3f},\t{1:.3f},\t{2:.3f},\t{3:.1f},'.
+            format(cluster.get_t_start(), cluster.get_t_end()-cluster.get_t_start(), 
+            cluster.Popen(), cluster.open_level))
+        self.parent.textBox.append(text)
         self.update_cluster()
     
-    
     def update(self):
-
-        self.label1.setText('Displaying patch: ' + self.parent.filename)
-
+        
         end = len(self.parent.record.trace) * self.parent.record.dt
         t = np.arange(0.0, end, self.parent.record.dt)
         
@@ -117,7 +122,7 @@ class TraceDock(Dock):
         self.pltTrace.clear()
         self.pltTrace.plot(t, self.parent.record.trace, pen='g')
         self.seg1StartLn = pg.InfiniteLine(angle=90, movable=True, pen='r')
-        if self.seg1coor == None:
+        if self.seg1coor is None:
             self.seg1coor = (end * 0.1, end * 0.2)
         self.seg1StartLn.setValue(self.seg1coor[0])
         self.seg1StartLn.sigPositionChangeFinished.connect(self.seg1Changed)
@@ -133,7 +138,7 @@ class TraceDock(Dock):
         t = np.arange(self.seg1.t_start, end, self.seg1.dt)
         self.pltSegment.clear()
         self.pltSegment.plot(t, self.seg1.trace, pen='g')
-        if (self.seg2coor) == None or (self.seg1.t_start > self.seg2coor[0]) or (end < self.seg2coor[1]):
+        if (self.seg2coor) is None or (self.seg1.t_start > self.seg2coor[0]) or (end < self.seg2coor[1]):
             self.seg2coor = (0.99*self.seg1.t_start + 0.01*end, end * 0.9)
         self.seg2StartLn = pg.InfiniteLine(angle=90, movable=True, pen='r')
         self.seg2StartLn.setValue(self.seg2coor[0])
@@ -156,7 +161,7 @@ class TraceDock(Dock):
         self.pltCluster.clear()
         self.pltCluster.plot(t, self.cluster.trace, pen='g')
         self.baseLn = pg.InfiniteLine(angle=90, movable=True, pen='r')
-        if ((self.basecoor == None) or 
+        if ((self.basecoor is None) or 
                 (self.basecoor < self.cluster.t_start) or 
                 (self.basecoor > end)):
             self.basecoor = 0.9*self.cluster.t_start + 0.1*end
@@ -170,12 +175,9 @@ class TraceDock(Dock):
             self.clusterOpenLn.sigPositionChangeFinished.connect(self.clusterOpenChanged)
             self.pltCluster.addItem(self.clusterOpenLn)
             
-        if self.popen:
-            self.label2.setText('Cluster Popen = {0:.6f}'.format(self.popen))
+#        if self.popen:
+#            self.label2.setText('Cluster Popen = {0:.6f}'.format(self.popen))
         
-        #self.parent.update()
-        
-    
     def clusterOpenChanged(self):
         pass
 
@@ -186,7 +188,6 @@ class TraceDock(Dock):
         self.cluster.trace -= av
         self.update_cluster()
         
-
     def seg1Changed(self):
         coor = [self.seg1StartLn.value(), self.seg1EndLn.value()]
         self.seg1coor = np.sort(coor)
@@ -205,26 +206,27 @@ class TraceDock(Dock):
             ";CONSAM file  (*.ssd *.SSD *.dat *.DAT);;All files (*.*)")    
         self.parent.record = Record(self.parent.filename)
         
+        text = 'Displaying patch: ' + self.parent.filename
+        self.label1.setText(text)
+        self.parent.textBox.append(text)
+        text = 'Start [s],\tLength [s],\tPopen,\tAmplitude [pA],'
+        self.parent.textBox.append(text)
+        
         self.update()
-        #self.parent.update()
         self.clearBtn.setEnabled(True)
         self.popenBtn.setEnabled(True)
 #        self.adjustBtn.setEnabled(True)
-        
-      
+              
     def clear(self):
         
         self.update()
         self.pltCluster.clear()
-
         self.pltTrace.clear()
         self.pltSegment.clear()
         self.label1.setText('')
         self.label2.setText('')
-       
         self.clearBtn.setEnabled(False)
         self.popenBtn.setEnabled(False)
-
         self.parent.clear()
 
 

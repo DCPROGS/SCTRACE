@@ -22,7 +22,7 @@ class Cluster():
         self.t_start = t_start
         self.open_level = open_level
 
-    def cal_Popen(self):
+    def Popen(self):
         integrated_charge = np.sum(self.trace)
         total_charge = self.open_level * len(self.trace)
         Popen = integrated_charge / total_charge
