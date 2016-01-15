@@ -115,7 +115,7 @@ class Segment(object):
                 baseline_1 = np.mean(baseline_1)
                 baseline_2 = np.mean(baseline_2)
 
-                if (self.open_level - baseline_1) > (self.open_level - baseline_1):
+                if (self.open_level - baseline_1) > (self.open_level - baseline_2):
                     self.baseline = baseline_1
                 else:
                     self.baseline = baseline_2
