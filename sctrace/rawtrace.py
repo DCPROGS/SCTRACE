@@ -22,7 +22,7 @@ class Cluster():
         self.t_start = t_start
         self.open_level = open_level
 
-    def cal_Popen(self):
+    def Popen(self):
         integrated_charge = np.sum(self.trace)
         total_charge = self.open_level * len(self.trace)
         Popen = integrated_charge / total_charge
@@ -42,7 +42,7 @@ class Segment(object):
                  filter_rising_t = None):
         '''
         '''
-        self.trace = trace
+        self.trace = np.copy(trace)
         self.dt = dt
         self.t_start = t_start
 
@@ -120,7 +120,7 @@ class Segment(object):
 
 
 class Record(Segment):
-    def __init__(self, filename, filter_f = None):
+    def __init__(self, filename, filter_f = 3000):
         self.filename = filename
         #TODO: currently opens Axon file directly. Make option to open SSD file.
         self.trace, self.dt = self.read_abf(self.filename)
@@ -137,7 +137,7 @@ class Record(Segment):
 
     def slice(self, start, end, dtype = 'index'):
         if dtype == 'index':
-            return Segment(trace = self.trace[start: end], dt = self.dt,
+            return Segment(trace = np.copy(self.trace[start: end]), dt = self.dt,
             t_start = start * self.dt, filter_rising_t = self.filter_rising_t)
         elif dtype == 'time':
             idx_start = int(np.floor(start/self.dt))
