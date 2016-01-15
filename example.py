@@ -8,7 +8,7 @@ from pylab import *
 from sctrace.rawtrace import Record
 
 if __name__ == "__main__":
-    
+
     filename="./sctrace/samples/cluster.abf"
     cluster = Record(filename, filter_f = 3000)
     end = len(cluster.trace) * cluster.dt
@@ -22,8 +22,8 @@ if __name__ == "__main__":
     title('Cluster example')
     grid(True)
     show()
-    
-    
+
+
     new_segement = cluster.slice(0.6, 1.15, dtype = 'time')
     new_cluster = new_segement.find_cluster()
     popen = new_cluster.Popen()
