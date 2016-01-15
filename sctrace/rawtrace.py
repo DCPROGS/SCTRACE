@@ -38,7 +38,7 @@ class Cluster():
         return 'Start time: {start}, End time: {end}'.format(start = self.get_t_start(), end = self.get_t_end())
 
 class Segment(object):
-    def __init__(self, trace = None, dt = None, t_start = 0, 
+    def __init__(self, trace = None, dt = None, t_start = 0,
                  filter_rising_t = None):
         '''
         '''
@@ -63,7 +63,7 @@ class Segment(object):
         adjusted_trace = self.trace - self.baseline
         idx_start, idx_stop = self.detect_start_stop(adjusted_trace, adjusted_open_level)
         adjusted_t_start = self.t_start + self.dt * idx_start
-        cluster = Cluster(trace = adjusted_trace[idx_start: idx_stop], 
+        cluster = Cluster(trace = adjusted_trace[idx_start: idx_stop],
                           dt = self.dt,
         t_start = adjusted_t_start, open_level = adjusted_open_level)
         return cluster
@@ -84,7 +84,7 @@ class Segment(object):
             estimate_open_level = np.percentile(self.trace, 99)
             # take the 1% quantile as the minimum amplitude
             estimate_baseline = np.percentile(self.trace, 1)
-            
+
             half_amplitude = (estimate_open_level + estimate_baseline) / 2
             above_half_amplitude = np.where(self.trace > half_amplitude)[0]
             length_filter = int(np.ceil(self.filter_rising_t/self.dt))
@@ -95,17 +95,17 @@ class Segment(object):
             baseline_2 = np.mean(self.trace[above_half_amplitude[-1]+length_filter:baseline_after])
             self.baseline = np.mean([baseline_1, baseline_2])
 
-            
-            split_index = np.split(above_half_amplitude, 
+
+            split_index = np.split(above_half_amplitude,
                                    np.where(np.diff(above_half_amplitude) != 1)[0]+1)
-            
+
             open_level_list = []
             for amplitude in split_index:
                 if len(amplitude) > 2*length_filter:
                     open_level_list.append(amplitude[length_filter:-length_filter])
-                    
+
             total_open_level = self.trace[np.hstack(open_level_list)]
-            self.open_level = np.mean(total_open_level)             
+            self.open_level = np.mean(total_open_level)
 
 
 
@@ -136,6 +136,7 @@ class Record(Segment):
         return trace, dt
 
     def slice(self, start, end, dtype = 'index'):
+        start, end = sorted([start, end])
         if dtype == 'index':
             return Segment(trace = np.copy(self.trace[start: end]), dt = self.dt,
             t_start = start * self.dt, filter_rising_t = self.filter_rising_t)
