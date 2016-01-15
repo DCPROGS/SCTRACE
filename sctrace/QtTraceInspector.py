@@ -90,16 +90,6 @@ class TraceDock(Dock):
         w1.addWidget(self.label2, row=7, col=1)
 
         self.addWidget(w1)
-        
-    def calc_Popen(self):
-        cluster = self.cluster.find_cluster()
-        self.popen = cluster.Popen()
-        self.clusterOpenLevel = cluster.open_level
-        text = ('{0:.3f},\t{1:.3f},\t{2:.3f},\t{3:.1f},'.
-            format(cluster.get_t_start(), cluster.get_t_end()-cluster.get_t_start(), 
-            cluster.Popen(), cluster.open_level))
-        self.parent.textBox.append(text)
-        self.update_cluster()
     
     def update(self):
         
@@ -158,14 +148,14 @@ class TraceDock(Dock):
         self.pltCluster.clear()
         self.pltCluster.plot(t, self.cluster.trace, pen='g')
         
-        self.baseLn = pg.InfiniteLine(angle=90, movable=True, pen='r')
-        if ((self.basecoor is None) or 
-                (self.basecoor < self.cluster.t_start) or 
-                (self.basecoor > end)):
-            self.basecoor = 0.9*self.cluster.t_start + 0.1*end
-        self.baseLn.setValue(self.basecoor)
-        self.baseLn.sigPositionChangeFinished.connect(self.baseChanged)
-        self.pltCluster.addItem(self.baseLn)
+#        self.baseLn = pg.InfiniteLine(angle=90, movable=True, pen='r')
+#        if ((self.basecoor is None) or 
+#                (self.basecoor < self.cluster.t_start) or 
+#                (self.basecoor > end)):
+#            self.basecoor = 0.9*self.cluster.t_start + 0.1*end
+#        self.baseLn.setValue(self.basecoor)
+#        self.baseLn.sigPositionChangeFinished.connect(self.baseChanged)
+#        self.pltCluster.addItem(self.baseLn)
         
         if self.clusterOpenLevel:
             self.clusterOpenLn = pg.InfiniteLine(angle=0, movable=True, pen='y')
@@ -177,11 +167,22 @@ class TraceDock(Dock):
 #    def clusterOpenChanged(self):
 #        pass
 
-    def baseChanged(self):
-        self.basecoor = self.baseLn.value()
-        points = int((self.basecoor - self.cluster.t_start) / self.cluster.dt)
-        av = np.average(self.cluster.trace[:points])
-        self.cluster.trace -= av
+#    def baseChanged(self):
+#        self.basecoor = self.baseLn.value()
+#        points = int((self.basecoor - self.cluster.t_start) / self.cluster.dt)
+#        av = np.average(self.cluster.trace[:points])
+#        self.cluster.trace -= av
+#        self.update_cluster()
+
+    def calc_Popen(self):
+        cluster = self.cluster.find_cluster()
+        self.cluster.trace -= self.cluster.baseline
+        self.popen = cluster.Popen()
+        self.clusterOpenLevel = cluster.open_level
+        text = ('{0:.3f},\t{1:.3f},\t{2:.3f},\t{3:.1f},'.
+            format(cluster.get_t_start(), cluster.get_t_end()-cluster.get_t_start(), 
+            cluster.Popen(), cluster.open_level))
+        self.parent.textBox.append(text)
         self.update_cluster()
         
     def seg1Changed(self):
