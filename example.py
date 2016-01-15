@@ -24,7 +24,7 @@ if __name__ == "__main__":
     show()
     
     
-    new_segement = cluster.slice(0.1, 1.15, dtype = 'time')
+    new_segement = cluster.slice(0.6, 1.15, dtype = 'time')
     new_cluster = new_segement.find_cluster()
     popen = new_cluster.Popen()
     print(new_cluster)
