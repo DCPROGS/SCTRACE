@@ -15,13 +15,14 @@ import scipy as sp
 from dcpyps import dcio
 
 class Cluster():
-    def __init__(self, trace = None, dt = None, t_start = 0, open_level = None):
+    def __init__(self, trace = None, dt = None, t_start = 0, open_level = None, baseline = None):
         '''
         '''
         self.trace = trace
         self.dt = dt
         self.t_start = t_start
         self.open_level = open_level
+        self.baseline = baseline
 
     def Popen(self):
         integrated_charge = np.sum(self.trace)
@@ -34,6 +35,13 @@ class Cluster():
 
     def get_t_end(self):
         return self.t_start + self.dt * len(self.trace)
+
+    def display_trace(self):
+        if self.baseline:
+            return np.hstack([self.baseline[0], self.trace, self.baseline[1]])
+        else:
+            return self.trace
+
 
     def __str__(self):
         return 'Start time: {start}, End time: {end}'.format(start = self.get_t_start(), end = self.get_t_end())
@@ -69,10 +77,21 @@ class Segment(object):
             self.is_baseline_adjusted = True
         idx_start, idx_stop = self.detect_start_stop(self.trace, self.adjusted_open_level)
         adjusted_t_start = self.t_start + self.dt * idx_start
-        cluster = Cluster(trace = self.trace[idx_start: idx_stop],
-                          dt = self.dt,
-                          t_start = adjusted_t_start, 
-                          open_level = self.adjusted_open_level)
+        tenth_length = int((idx_stop-idx_start)/10)
+        if (idx_start-tenth_length) > 0:
+            baseline_start = idx_start-tenth_length
+        else:
+            baseline_start = 0
+
+        if (idx_stop+tenth_length) < len(adjusted_trace):
+            baseline_stop = idx_stop+tenth_length
+        else:
+            baseline_stop = len(adjusted_trace)
+
+        cluster = Cluster(trace = adjusted_trace[idx_start: idx_stop],
+                          dt = self.dt, t_start = adjusted_t_start,
+                          open_level = adjusted_open_level,
+                          baseline = [adjusted_trace[baseline_start:idx_start], adjusted_trace[idx_stop:baseline_stop]])
         return cluster
 
     def amplitude_analysis(self, method = 'filter'):
