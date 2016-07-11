@@ -83,15 +83,15 @@ class Segment(object):
         else:
             baseline_start = 0
 
-        if (idx_stop+tenth_length) < len(adjusted_trace):
+        if (idx_stop+tenth_length) < len(self.trace):
             baseline_stop = idx_stop+tenth_length
         else:
-            baseline_stop = len(adjusted_trace)
+            baseline_stop = len(self.trace)
 
-        cluster = Cluster(trace = adjusted_trace[idx_start: idx_stop],
+        cluster = Cluster(trace = self.trace[idx_start: idx_stop],
                           dt = self.dt, t_start = adjusted_t_start,
-                          open_level = adjusted_open_level,
-                          baseline = [adjusted_trace[baseline_start:idx_start], adjusted_trace[idx_stop:baseline_stop]])
+                          open_level = self.adjusted_open_level,
+                          baseline = [self.trace[baseline_start:idx_start], self.trace[idx_stop:baseline_stop]])
         return cluster
 
     def amplitude_analysis(self, method = 'filter'):
