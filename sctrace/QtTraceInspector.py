@@ -28,6 +28,7 @@ class TraceInspector(QMainWindow):
         self.filename = None
         self.record = None
         self.path = None
+        self.is_cluster_loaded = False
         
 
         dock1 = TraceDock(self)
@@ -56,6 +57,7 @@ class TraceDock(Dock):
         self.seg2coor = None
         self.basecoor = None
         self.seg1 = None
+        self.cluster_segment = None
         self.cluster = None
         self.popen = None
         self.clusterOpenLevel = None
@@ -135,7 +137,7 @@ class TraceDock(Dock):
         
         # Plot cluster indicated by cursors in Segment plot
         self.cluster = self.parent.record.slice(self.seg2coor[0], self.seg2coor[1], dtype='time')
-        
+      
         self.update_cluster()
         
     def update_cluster(self):
@@ -160,12 +162,14 @@ class TraceDock(Dock):
         if self.clusterOpenLevel:
             self.clusterOpenLn = pg.InfiniteLine(angle=0, movable=True, pen='y')
             self.clusterOpenLn.setValue(self.clusterOpenLevel)
-#            self.clusterOpenLn.sigPositionChangeFinished.connect(self.clusterOpenChanged)
+            self.clusterOpenLn.sigPositionChangeFinished.connect(self.clusterOpenChanged)
             self.pltCluster.addItem(self.clusterOpenLn)
             
 
-#    def clusterOpenChanged(self):
-#        pass
+    def clusterOpenChanged(self):
+        self.clusterOpenLevel = self.clusterOpenLn.value()
+        
+        self.update_cluster()
 
 #    def baseChanged(self):
 #        self.basecoor = self.baseLn.value()
@@ -176,11 +180,14 @@ class TraceDock(Dock):
 
     def calc_Popen(self):
         cluster = self.cluster.find_cluster()
-        self.cluster.trace -= self.cluster.baseline
         self.popen = cluster.Popen()
-        self.clusterOpenLevel = cluster.open_level
+        if self.clusterOpenLevel is None:
+            self.clusterOpenLevel = cluster.open_level
+        else:
+            cluster.open_level = self.clusterOpenLevel
+        
         text = ('{0:.3f},\t{1:.3f},\t{2:.3f},\t{3:.1f},'.
-            format(cluster.get_t_start(), cluster.get_t_end()-cluster.get_t_start(), 
+                format(cluster.get_t_start(), cluster.get_t_end()-cluster.get_t_start(), 
             cluster.Popen(), cluster.open_level))
         self.parent.textBox.append(text)
         self.update_cluster()
@@ -194,6 +201,7 @@ class TraceDock(Dock):
         coor = [self.seg2StartLn.value(), self.seg2EndLn.value()]
         self.seg2coor = np.sort(coor)
         self.update()
+        self.is_cluster_loaded = True
 
     def load(self):
         self.clear()

@@ -48,25 +48,31 @@ class Segment(object):
         self.t_start = t_start
 
         self.baseline = None
+        self.is_baseline_adjusted = False
         self.open_level = None
+        self.adjusted_open_level = None
         self.filter_rising_t = filter_rising_t
 
     def find_cluster(self):
         '''
         Find the cluster within the start time (s) and the end time (s).
         '''
+        
         try:
-            adjusted_open_level = self.open_level - self.baseline
+            self.adjusted_open_level = self.open_level - self.baseline
         except TypeError: # check if self.open_level is None
             self.amplitude_analysis()
-            adjusted_open_level = self.open_level - self.baseline
+            self.adjusted_open_level = self.open_level - self.baseline
 
-        adjusted_trace = self.trace - self.baseline
-        idx_start, idx_stop = self.detect_start_stop(adjusted_trace, adjusted_open_level)
+        if not self.is_baseline_adjusted: 
+            self.trace -= self.baseline
+            self.is_baseline_adjusted = True
+        idx_start, idx_stop = self.detect_start_stop(self.trace, self.adjusted_open_level)
         adjusted_t_start = self.t_start + self.dt * idx_start
-        cluster = Cluster(trace = adjusted_trace[idx_start: idx_stop],
+        cluster = Cluster(trace = self.trace[idx_start: idx_stop],
                           dt = self.dt,
-        t_start = adjusted_t_start, open_level = adjusted_open_level)
+                          t_start = adjusted_t_start, 
+                          open_level = self.adjusted_open_level)
         return cluster
 
     def amplitude_analysis(self, method = 'filter'):
@@ -91,9 +97,9 @@ class Segment(object):
             length_filter = int(np.ceil(self.filter_rising_t/self.dt))
             sample_index = 10e-3 / self.dt
             baseline_before = max(0, above_half_amplitude[0]-length_filter - sample_index)
-            baseline_1 = self.trace[baseline_before: above_half_amplitude[0]-length_filter]
+            baseline_1 = self.trace[int(baseline_before): int(above_half_amplitude[0]-length_filter)]
             baseline_after = min(len(self.trace), above_half_amplitude[-1]+length_filter+sample_index)
-            baseline_2 = self.trace[above_half_amplitude[-1]+length_filter:baseline_after]
+            baseline_2 = self.trace[int(above_half_amplitude[-1]+length_filter):int(baseline_after)]
 
             p_value = sp.stats.ttest_ind(baseline_1, baseline_2)[1]
 
