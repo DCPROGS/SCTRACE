@@ -95,15 +95,19 @@ class TraceDock(Dock):
     
     def update(self):
         
-        end = len(self.parent.record.trace) * self.parent.record.dt
-        t = np.arange(0.0, end, self.parent.record.dt)
+        #end = len(self.parent.record.trace) * self.parent.record.dt
+        #t = np.arange(0.0, end, self.parent.record.dt)
         
         # Plot all trace.
         self.pltTrace.clear()
-        self.pltTrace.plot(t, self.parent.record.trace, pen='g')
+        self.pltTrace.plot(self.parent.record.display_t, 
+                           self.parent.record.display_I,
+                           pen='g')
+        #self.pltTrace.plot(t, self.parent.record.trace, pen='g')
         self.seg1StartLn = pg.InfiniteLine(angle=90, movable=True, pen='r')
         if self.seg1coor is None:
-            self.seg1coor = (end * 0.1, end * 0.2)
+            self.seg1coor = (self.parent.record.t_end * 0.1, 
+                             self.parent.record.t_end * 0.2)
         self.seg1StartLn.setValue(self.seg1coor[0])
         self.seg1StartLn.sigPositionChangeFinished.connect(self.seg1Changed)
         self.seg1EndLn = pg.InfiniteLine(angle=90, movable=True, pen='r')
@@ -121,9 +125,14 @@ class TraceDock(Dock):
         if len(t) < len(self.seg1.trace):
             t = np.append(t, [t[-1]+self.seg1.dt])
         self.pltSegment.clear()
-        self.pltSegment.plot(t, self.seg1.trace, pen='g')
-        if (self.seg2coor) is None or (self.seg1.t_start > self.seg2coor[0]) or (end < self.seg2coor[1]):
-            self.seg2coor = (0.9*self.seg1.t_start + 0.1*end, 0.1*self.seg1.t_start + 0.9*end)
+        self.pltSegment.plot(self.seg1.display_t, 
+                             self.seg1.display_I, pen='g')
+        #self.pltSegment.plot(t, self.seg1.trace, pen='g')
+        if ((self.seg2coor is None) or 
+                (self.seg1.t_start > self.seg2coor[0]) or 
+                (self.seg1.t_end < self.seg2coor[1])):
+            self.seg2coor = (0.9 * self.seg1.t_start + 0.1 * self.seg1.t_end, 
+                             0.1 * self.seg1.t_start + 0.9 * self.seg1.t_end)
         self.seg2StartLn = pg.InfiniteLine(angle=90, movable=True, pen='r')
         self.seg2StartLn.setValue(self.seg2coor[0])
         self.seg2StartLn.sigPositionChangeFinished.connect(self.seg2Changed)
@@ -136,7 +145,9 @@ class TraceDock(Dock):
         self.clusterOpenLevel = None
         
         # Plot cluster indicated by cursors in Segment plot
-        self.cluster = self.parent.record.slice(self.seg2coor[0], self.seg2coor[1], dtype='time')
+        self.cluster = self.parent.record.slice(self.seg2coor[0], 
+                                                self.seg2coor[1], 
+                                                dtype='time')
       
         self.update_cluster()
         

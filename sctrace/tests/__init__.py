@@ -5,4 +5,4 @@ SCTRACE Testing
 SCTRACE unit tests
 """
 
-from test import *
+from sctrace.tests import *

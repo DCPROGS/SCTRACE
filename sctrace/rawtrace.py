@@ -5,7 +5,8 @@ Created on Mon Jan  4 11:59:45 2016
 @author: zhiyiwu
 """
 
-
+import math
+import ctypes
 import numpy as np
 from sklearn import mixture
 # http://scikit-learn.org/stable/
@@ -54,12 +55,27 @@ class Segment(object):
         self.trace = np.copy(trace)
         self.dt = dt
         self.t_start = t_start
+        self.t_end = self.t_start + len(self.trace) * self.dt
+        self.to_display()
 
         self.baseline = None
         self.is_baseline_adjusted = False
         self.open_level = None
         self.adjusted_open_level = None
         self.filter_rising_t = filter_rising_t
+        
+    def to_display(self):
+        """Prepare trace for fast display."""
+        pix = ctypes.windll.user32.GetSystemMetrics(0)
+        block_points = math.ceil(len(self.trace) / pix)
+        block_number = math.ceil(len(self.trace) / block_points)
+        t = np.arange(self.t_start, self.t_end, self.dt)
+        self.display_t, self.display_I = [], []
+        for block, time in zip(np.array(
+                           np.array_split(self.trace, block_number)),
+                           np.array(np.array_split(t, block_number))):
+            self.display_t.append(time[0]), self.display_t.append(time[0])
+            self.display_I.append(min(block)), self.display_I.append(max(block))
 
     def find_cluster(self):
         '''
@@ -161,11 +177,15 @@ class Segment(object):
 
 class Record(Segment):
     def __init__(self, filename, filter_f = 3000):
+        
         self.filename = filename
+        self.filter_rising_t = 0.3321/filter_f
         #TODO: currently opens Axon file directly. Make option to open SSD file.
         self.trace, self.dt = self.read_abf(self.filename)
-        self.filter_rising_t = 0.3321/filter_f
-
+        Segment.__init__(self, trace=self.trace, dt=self.dt, 
+                         filter_rising_t=self.filter_rising_t)
+        self.to_display()
+        
     def read_abf(self, filename):
         h = dcio.abf_read_header(filename, 0)
         calfac = (1 / ((h['IADCResolution'] / h['fADCRange'])
@@ -185,19 +205,4 @@ class Record(Segment):
             idx_end = int(np.floor(end/self.dt))
             return Segment(trace = self.trace[idx_start: idx_end], dt = self.dt,
             t_start = start, filter_rising_t = self.filter_rising_t)
-
-
-    def read(self):
-        '''
-        Convert the raw data to a numpy array by reading Axon files using neo.
-        '''
-        #from neo.io import AxonIO
-        # https://github.com/NeuralEnsemble/python-neo
-        # Just clone this to pythonpath
-        #from quantities import kHz, ms, pA, nA, s, uV
-        # https://pypi.python.org/pypi/quantities
-        # Add support for units
-        # Can be installed via pip
-        original_file = AxonIO(filename=self.filename)
-        read_data = original_file.read_block(lazy=False, cascade=True)
-        self.trace = read_data.segments[0].analogsignals[0]
+            
