@@ -44,6 +44,7 @@ class TraceInspector(QMainWindow):
     def clear(self):
         self.filename = None
         self.record = None
+        self.textBox.clear()
 
 
 class TraceDock(Dock):
@@ -57,6 +58,7 @@ class TraceDock(Dock):
         self.seg2coor = None
         self.basecoor = None
         self.seg1 = None
+        self.seg2 = None
         self.cluster_segment = None
         self.cluster = None
         self.popen = None
@@ -73,23 +75,25 @@ class TraceDock(Dock):
         w1.addWidget(self.clearBtn, row=0, col=1)
 
         self.label1 = QLabel('')
-        w1.addWidget(self.label1, row=2, col=0, colspan=2)
+        w1.addWidget(self.label1, row=2, col=0, colspan=3)
         
         self.pltTrace = pg.PlotWidget()
-        w1.addWidget(self.pltTrace, row=3, col=0, colspan=2)
+        w1.addWidget(self.pltTrace, row=3, col=0, colspan=3)
         
         self.pltSegment = pg.PlotWidget()
-        w1.addWidget(self.pltSegment, row=4, col=0, colspan=2)
+        w1.addWidget(self.pltSegment, row=4, col=0, colspan=3)
         
         self.pltCluster = pg.PlotWidget()
-        w1.addWidget(self.pltCluster, row=5, col=0, colspan=2)
+        w1.addWidget(self.pltCluster, row=5, col=0, colspan=3)
         
-        self.popenBtn = QPushButton('Calculate Popen')
-        self.popenBtn.clicked.connect(self.calc_Popen)
+        self.popenBtn = QPushButton('Take measurment')
+        self.popenBtn.clicked.connect(self.take_measurment)
         self.popenBtn.setEnabled(False)
         self.label2 = QLabel('')
-        w1.addWidget(self.popenBtn, row=7, col=0)
-        w1.addWidget(self.label2, row=7, col=1)
+        self.label3 = QLabel('')
+        w1.addWidget(self.label2, row=7, col=0)
+        w1.addWidget(self.label3, row=7, col=1)
+        w1.addWidget(self.popenBtn, row=7, col=2)
 
         self.addWidget(w1)
     
@@ -145,21 +149,22 @@ class TraceDock(Dock):
         self.clusterOpenLevel = None
         
         # Plot cluster indicated by cursors in Segment plot
-        self.cluster = self.parent.record.slice(self.seg2coor[0], 
+        self.seg2 = self.parent.record.slice(self.seg2coor[0], 
                                                 self.seg2coor[1], 
                                                 dtype='time')
       
         self.update_cluster()
         
     def update_cluster(self):
-        end = self.cluster.t_start + len(self.cluster.trace) * self.cluster.dt
-        t = np.arange(self.cluster.t_start, end, self.cluster.dt)
-        if len(t) > len(self.cluster.trace):
+        self.calc_Popen()
+        end = self.seg2.t_start + len(self.seg2.trace) * self.seg2.dt
+        t = np.arange(self.seg2.t_start, end, self.cluster.dt)
+        if len(t) > len(self.seg2.trace):
             t = np.delete(t, -1)
-        if len(t) < len(self.cluster.trace):
-            t = np.append(t, [t[-1]+self.cluster.dt])
+        if len(t) < len(self.seg2.trace):
+            t = np.append(t, [t[-1]+self.seg2.dt])
         self.pltCluster.clear()
-        self.pltCluster.plot(t, self.cluster.trace, pen='g')
+        self.pltCluster.plot(t, self.seg2.trace, pen='g')
         
 #        self.baseLn = pg.InfiniteLine(angle=90, movable=True, pen='r')
 #        if ((self.basecoor is None) or 
@@ -179,9 +184,8 @@ class TraceDock(Dock):
 
     def clusterOpenChanged(self):
         self.clusterOpenLevel = self.clusterOpenLn.value()
-        
         self.update_cluster()
-
+        
 #    def baseChanged(self):
 #        self.basecoor = self.baseLn.value()
 #        points = int((self.basecoor - self.cluster.t_start) / self.cluster.dt)
@@ -190,16 +194,20 @@ class TraceDock(Dock):
 #        self.update_cluster()
 
     def calc_Popen(self):
-        cluster = self.cluster.find_cluster()
-        self.popen = cluster.Popen()
+        self.cluster = self.seg2.find_cluster()
+        self.popen = self.cluster.Popen()
         if self.clusterOpenLevel is None:
-            self.clusterOpenLevel = cluster.open_level
+            self.clusterOpenLevel = self.cluster.open_level
         else:
-            cluster.open_level = self.clusterOpenLevel
+            self.cluster.open_level = self.clusterOpenLevel
+        self.label2.setText('Popen: {0:.3f}'.format(self.cluster.Popen()))
+        self.label3.setText('Amplitude: {0:.3f} pA'.format(self.cluster.open_level))
         
-        text = ('{0:.3f},\t{1:.3f},\t{2:.3f},\t{3:.1f},'.
-                format(cluster.get_t_start(), cluster.get_t_end()-cluster.get_t_start(), 
-            cluster.Popen(), cluster.open_level))
+    def take_measurment(self):
+        
+        text = ('{0:.3f}\t{1:.3f}\t{2:.3f}\t{3:.2f}'.
+                format(self.cluster.get_t_start(), self.cluster.get_t_end()-self.cluster.get_t_start(), 
+            self.cluster.Popen(), self.cluster.open_level))
         self.parent.textBox.append(text)
         self.update_cluster()
         

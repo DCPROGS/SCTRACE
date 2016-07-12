@@ -5,6 +5,7 @@ Created on Mon Jan  4 11:59:45 2016
 @author: zhiyiwu
 """
 
+import os
 import math
 import ctypes
 import numpy as np
@@ -176,12 +177,17 @@ class Segment(object):
 
 
 class Record(Segment):
-    def __init__(self, filename, filter_f = 3000):
+    def __init__(self, filename):
         
         self.filename = filename
-        self.filter_rising_t = 0.3321/filter_f
+        ext = self.filename.split('.')[-1]
         #TODO: currently opens Axon file directly. Make option to open SSD file.
-        self.trace, self.dt = self.read_abf(self.filename)
+        if ext == 'ABF' or ext == 'abf': 
+            self.trace, self.dt, self.ffilter = self.read_abf(self.filename)
+        if ext == 'SSD' or ext == 'ssd':
+            pass
+            
+        self.filter_rising_t = 0.3321 / self.ffilter
         Segment.__init__(self, trace=self.trace, dt=self.dt, 
                          filter_rising_t=self.filter_rising_t)
         self.to_display()
@@ -193,7 +199,16 @@ class Record(Segment):
                 h['fInstrumentScaleFactor'][h['nADCSamplingSeq'][0]]))
         trace = dcio.abf_read_data(filename, h) * calfac # convert to pA
         dt = h['fADCSampleInterval'] / 1.0e6 # convert to seconds
-        return trace, dt
+        ffilter = float(h['fSignalLowpassFilter'][h['nADCSamplingSeq'][0]])
+        return trace, dt, ffilter
+    
+#    def read_ssd(self, filename):
+#        h = dcio.ssd_read_header (filename)
+#        calfac = h['calfac']
+#        trace = dcio.ssd_read_data(filename, h) * calfac
+#        dt = 1 / h['srate']
+#        ffilter = h['filt']
+#        return trace, dt, ffilter
 
     def slice(self, start, end, dtype = 'index'):
         start, end = sorted([start, end])
